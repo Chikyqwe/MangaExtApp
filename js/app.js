@@ -51,42 +51,47 @@ const App = (() => {
   }
 
   function renderManga(data) {
-    console.log(data);
-    const c = document.getElementById("content");
+      const c = document.getElementById("content");
+      // Cambiamos el display de grid a block para la vista de detalles
+      c.style.display = "block"; 
 
-    c.innerHTML = `
-      <div style="grid-column:1/-1">
-        <button onclick="App.back()">⬅ Volver</button>
-
-        <div style="display:flex;gap:10px;margin:10px 0">
-          <img src="${data.cover}" style="width:120px;border-radius:6px">
-          <h2>${data.title}</h2>
-        </div>
-
-        <h3>Capítulos</h3>
-        <div id="chapters"></div>
-      </div>
-    `;
-
-    const list = document.getElementById("chapters");
-
-    data.chapters.forEach(ch => {
-      const d = document.createElement("div");
-      d.style.borderBottom = "1px solid #333";
-      d.style.padding = "6px 0";
-
-      d.innerHTML = `
-        <strong>${ch.title}</strong>
-        ${ch.groups.map(g => `
-          <div style="display:flex;justify-content:space-between">
-            <span>${g.group || ''} ${g.date || ''}</span>
-            <button onclick="window.open('${g.play}','_system')">▶</button>
+      c.innerHTML = `
+        <div class="manga-detail">
+          <button class="btn-back" onclick="App.init()">← Volver a la biblioteca</button>
+          
+          <div class="header-detail">
+            <img src="${data.cover}" class="cover-detail">
+            <div class="info-detail">
+              <h2>${data.title}</h2>
+              <p>${data.chapters.length} Capítulos encontrados</p>
+            </div>
           </div>
-        `).join("")}
-      `;
 
-      list.appendChild(d);
-    });
+          <div class="chapters-container">
+            ${data.chapters.map(ch => `
+              <div class="chapter-item">
+                <div class="chapter-number">${ch.title}</div>
+                <div class="groups-list">
+                  ${ch.groups.map(g => `
+                    <div class="group-row">
+                      <span class="group-name">${g.group || 'Scanlator'}</span>
+                      <button class="btn-play" onclick="window.open('${g.play}','_system')">LEER ▶</button>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+  }
+
+  // Modifica loadLibrary para restaurar el grid al volver
+  async function loadLibrary(append = false) {
+    const c = document.getElementById("content");
+    c.style.display = "grid"; // Restaurar grid
+    if (loading) return;
+    // ... resto de tu código
   }
 
   function setupScroll() {
