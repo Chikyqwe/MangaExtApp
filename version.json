@@ -1,5 +1,5 @@
 {
-  "resourcesVersion": "1.0.3",
+  "resourcesVersion": "1.0.4",
   "files": [
     "core/http.js",
     "core/zonatmo.js",
