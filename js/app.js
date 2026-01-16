@@ -51,13 +51,14 @@ const App = (() => {
   }
 
   function renderManga(data) {
+      console.log(data);
       const c = document.getElementById("content");
       // Cambiamos el display de grid a block para la vista de detalles
       c.style.display = "block"; 
 
       c.innerHTML = `
         <div class="manga-detail">
-          <button class="btn-back" onclick="App.init()">← Volver a la biblioteca</button>
+          <button class="btn-back" onclick="App.back()">← Volver a la biblioteca</button>
           
           <div class="header-detail">
             <img src="${data.cover}" class="cover-detail">
