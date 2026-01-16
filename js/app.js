@@ -51,6 +51,7 @@ const App = (() => {
   }
 
   function renderManga(data) {
+    console.log(data);
     const c = document.getElementById("content");
 
     c.innerHTML = `
