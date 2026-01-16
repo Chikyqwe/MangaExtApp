@@ -3,11 +3,10 @@ const CoreHTTP = (() => {
   function init() {
     cordova.plugin.http.setDataSerializer("utf8");
 
-    cordova.plugin.http.setHeader("*", {
-      "User-Agent": "Mozilla/5.0 (Android)",
-      "Accept": "text/html",
-      "Referer": "https://zonatmo.com/"
-    });
+    // Headers GLOBALS, uno por uno
+    cordova.plugin.http.setHeader(null, "User-Agent", "Mozilla/5.0 (Android)");
+    cordova.plugin.http.setHeader(null, "Accept", "text/html");
+    cordova.plugin.http.setHeader(null, "Referer", "https://zonatmo.com/");
   }
 
   function get(url) {
