@@ -85,15 +85,6 @@ const App = (() => {
         </div>
       `;
   }
-
-  // Modifica loadLibrary para restaurar el grid al volver
-  async function loadLibrary(append = false) {
-    const c = document.getElementById("content");
-    c.style.display = "grid"; // Restaurar grid
-    if (loading) return;
-    // ... resto de tu código
-  }
-
   function setupScroll() {
     window.addEventListener("scroll", () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
