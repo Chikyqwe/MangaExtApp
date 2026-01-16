@@ -1,0 +1,10 @@
+{
+  "resourcesVersion": "1.0.2",
+  "files": [
+    "core/http.js",
+    "core/zonatmo.js",
+    "css/index.css",
+    "index.html",
+    "js/app.js"
+  ]
+}
