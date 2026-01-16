@@ -39,8 +39,30 @@ const ZonaTMO = (() => {
   function parseManga(html, url) {
     const doc = new DOMParser().parseFromString(html, "text/html");
 
-    const title = doc.querySelector("h1")?.textContent.trim() || "";
-    const cover = doc.querySelector(".book-thumbnail img")?.src || "";
+    const title = doc.querySelector(".element-title")?.childNodes[0]?.textContent.trim() || "";
+
+    // Subtítulo (si quieres)
+    const subtitle = doc.querySelector(".element-subtitle")?.textContent.trim() || "";
+
+    // Portada
+    const cover = doc.querySelector(".book-thumbnail")?.src || "";
+
+    // Tipo / demografía
+    const type = doc.querySelector(".book-type")?.textContent.trim() || "";
+    const demography = doc.querySelector(".demography")?.textContent.trim() || "";
+
+    // Estado (Finalizado / En curso)
+    const status = doc.querySelector(".book-status")?.textContent.trim() || "";
+
+    // Descripción
+    const description = doc.querySelector(".element-description")?.textContent.trim() || "";
+
+    // Géneros
+    const genres = Array.from(doc.querySelectorAll(".element-header-content-text a.badge")).map(g => g.textContent.trim());
+
+    // Sinónimos
+    const synonyms = Array.from(doc.querySelectorAll(".element-header-content-text .badge-pill")).map(s => s.textContent.trim());
+
 
     const chapters = [];
 
@@ -66,8 +88,8 @@ const ZonaTMO = (() => {
       if (chTitle) chapters.push({ title: chTitle, groups });
     });
     console.log(chapterElements.length);
-
-    return { title, cover, chapters };
+    
+    return { title, cover, chapters, type, demography, status, description, genres, synonyms, subtitle };
   }
 
   return {

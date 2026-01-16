@@ -2,12 +2,18 @@ const App = (() => {
 
   let page = 1;
   let loading = false;
+  let scrollEnabled = true;
 
   document.addEventListener("deviceready", init);
 
   async function init() {
     CoreHTTP.init();
-    loadLibrary();
+
+    const c = document.getElementById("content");
+    c.style.display = "grid";
+
+    page = 1;
+    loadLibrary(false);
     setupScroll();
   }
 
@@ -23,6 +29,7 @@ const App = (() => {
 
   function renderLibrary(items, append) {
     const c = document.getElementById("content");
+
     if (!append) c.innerHTML = "";
 
     items.forEach(item => {
@@ -43,7 +50,10 @@ const App = (() => {
   }
 
   async function openManga(item) {
+    scrollEnabled = false;
+
     const c = document.getElementById("content");
+    c.style.display = "block";
     c.innerHTML = "Cargando...";
 
     const data = await ZonaTMO.cargarManga(item.url);
@@ -51,44 +61,48 @@ const App = (() => {
   }
 
   function renderManga(data) {
-      console.log(data);
-      const c = document.getElementById("content");
-      // Cambiamos el display de grid a block para la vista de detalles
-      c.style.display = "block"; 
+    const c = document.getElementById("content");
 
-      c.innerHTML = `
-        <div class="manga-detail">
-          <button class="btn-back" onclick="App.back()">← Volver a la biblioteca</button>
-          
-          <div class="header-detail">
-            <img src="${data.cover}" class="cover-detail">
-            <div class="info-detail">
-              <h2>${data.title}</h2>
-              <p>${data.chapters.length} Capítulos encontrados</p>
-            </div>
-          </div>
+    c.innerHTML = `
+      <div class="manga-detail">
+        <button class="btn-back" onclick="App.back()">← Volver a la biblioteca</button>
 
-          <div class="chapters-container">
-            ${data.chapters.map(ch => `
-              <div class="chapter-item">
-                <div class="chapter-number">${ch.title}</div>
-                <div class="groups-list">
-                  ${ch.groups.map(g => `
-                    <div class="group-row">
-                      <span class="group-name">${g.group || 'Scanlator'}</span>
-                      <button class="btn-play" onclick="window.open('${g.play}','_system')">LEER ▶</button>
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-            `).join("")}
+        <div class="header-detail">
+          <img src="${data.cover}" class="cover-detail">
+          <div class="info-detail">
+            <h2>${data.title}</h2>
+            <p>${data.chapters.length} Capítulos encontrados</p>
           </div>
         </div>
-      `;
+
+        <div class="chapters-container">
+          ${data.chapters.map(ch => `
+            <div class="chapter-item">
+              <div class="chapter-number">${ch.title}</div>
+              <div class="groups-list">
+                ${ch.groups.map(g => `
+                  <div class="group-row">
+                    <span class="group-name">${g.group || 'Scanlator'}</span>
+                    <button class="btn-play"
+                      onclick="window.open('${g.play}','_system')">
+                      LEER ▶
+                    </button>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
   }
+
   function setupScroll() {
     window.addEventListener("scroll", () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
+      if (!scrollEnabled || loading) return;
+
+      if (window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 150) {
         page++;
         loadLibrary(true);
       }
@@ -96,10 +110,19 @@ const App = (() => {
   }
 
   function back() {
+    scrollEnabled = true;
+    loading = false;
     page = 1;
+
+    const c = document.getElementById("content");
+    c.style.display = "grid";
+    c.innerHTML = "";
+
     loadLibrary(false);
   }
 
-  return { back };
+  return {
+    back
+  };
 
 })();
