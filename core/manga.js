@@ -199,8 +199,12 @@ const CascadeReader = (() => {
   let observer = null;
   let referer = "https://zonatmo.com/";
 
+  // ---- control de descargas ----
+  let downloadQueue = [];
+  let downloading = false;
+  const PRELOAD_AHEAD = 1; // cuántas páginas adelantar
+
   function init(chapterData) {
-    console.log("CascadeReader init", chapterData);
     pages = chapterData.images;
     index = 0;
     referer = chapterData.referer || referer;
@@ -214,9 +218,10 @@ const CascadeReader = (() => {
       chapterData.readingDirection === "LTR" ? "ltr" : "rtl";
 
     createObserver();
-    loadNext();
+    loadNext(); // primera página
   }
 
+  // ---- crea una página vacía ----
   function loadNext() {
     if (index >= pages.length) return;
 
@@ -226,7 +231,7 @@ const CascadeReader = (() => {
     page.className = "page loading";
 
     const img = document.createElement("img");
-    img.dataset.src = pages[index]; // URL remota
+    img.dataset.src = pages[index];
     img.loading = "lazy";
 
     page.appendChild(img);
@@ -235,14 +240,48 @@ const CascadeReader = (() => {
     observer.observe(page);
     index++;
   }
-  function downloadImage(url, referer = "https://zonatmo.com/") {
+
+  // ---- cola de descarga ----
+  function enqueueDownload(img) {
+    if (img.dataset.downloading || img.src) return;
+
+    img.dataset.downloading = "1";
+    downloadQueue.push(img);
+    processQueue();
+  }
+
+  // ---- worker (1 descarga a la vez) ----
+  async function processQueue() {
+    if (downloading || downloadQueue.length === 0) return;
+
+    downloading = true;
+    const img = downloadQueue.shift();
+
+    try {
+      const localUrl = await downloadImage(img.dataset.src, referer);
+      img.src = localUrl.nativeURL;
+
+      img.onload = () => {
+        img.closest(".page")?.classList.remove("loading");
+      };
+
+    } catch (e) {
+      console.error("IMG DOWNLOAD ERROR", e);
+    }
+
+    downloading = false;
+    processQueue();
+  }
+
+  // ---- descarga real ----
+  function downloadImage(url, referer) {
     return new Promise((resolve, reject) => {
       const fileName = "img_" + Date.now() + ".webp";
       const filePath = cordova.file.cacheDirectory + fileName;
 
       cordova.plugin.http.downloadFile(
         url,
-        {}, // params
+        {},
         {
           "Referer": referer,
           "User-Agent":
@@ -250,46 +289,39 @@ const CascadeReader = (() => {
           "Accept": "image/webp,image/*,*/*"
         },
         filePath,
-        entry => {
-          // entry es la ruta local
-          resolve(entry);
-        },
+        entry => resolve(entry),
         err => reject(err)
       );
     });
-  }0
+  }
+
+  // ---- observer lectura + preload ----
   function createObserver() {
     observer = new IntersectionObserver(entries => {
-      entries.forEach(async entry => {
+      entries.forEach(entry => {
         if (!entry.isIntersecting) return;
 
         const img = entry.target.querySelector("img");
         if (!img || img.src) return;
 
-        try {
-          const localUrl = await downloadImage(
-            img.dataset.src,
-            referer
-          );
+        // página actual
+        enqueueDownload(img);
 
-          img.src = localUrl.nativeURL;
-
-          img.onload = () => {
-            entry.target.classList.remove("loading");
-            loadNext();
-          };
-
-        } catch (e) {
-          console.error("IMG DOWNLOAD ERROR", e);
+        // preload siguiente
+        const pagesEls = document.querySelectorAll(".page");
+        for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+          const nextPage = pagesEls[index - 1 + i];
+          const nextImg = nextPage?.querySelector("img");
+          if (nextImg) enqueueDownload(nextImg);
         }
 
         observer.unobserve(entry.target);
+        loadNext(); // crea SOLO la siguiente
       });
     }, {
-      rootMargin: "200px"
+      rootMargin: "150px"
     });
   }
 
   return { init };
-
 })();
