@@ -111,7 +111,7 @@ const App = (() => {
                   <div class="group-row">
                     <span class="group-name">${g.group || 'Scanlator'}</span>
                     <button class="btn-play"
-                      onclick="openViewer('${g.play}')">
+                      onclick="App.openViewer('${g.play}')">
                       LEER ▶
                     </button>
                   </div>
@@ -198,7 +198,8 @@ const App = (() => {
 
   return {
     back,
-    closeReader
+    closeReader,
+    openViewer
   };
 
 })();
