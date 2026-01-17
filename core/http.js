@@ -32,7 +32,7 @@ const CoreHTTP = (() => {
     }
 
     http.setHeader(null, "Referer", ref);
-
+    console.log("[HTTP] GET", url, "(ref:", ref + ")");
     return new Promise((resolve, reject) => {
       http.get(
         url,
