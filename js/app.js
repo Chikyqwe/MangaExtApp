@@ -4,16 +4,38 @@ const App = (() => {
   let loading = false;
   let scrollEnabled = true;
 
+  // 🧠 Estado persistente de la librería
+  let libraryState = {
+    page: 1,
+    scrollY: 0,
+    html: ""
+  };
+
   document.addEventListener("deviceready", init);
 
   async function init() {
     CoreHTTP.init();
 
+    const saved = localStorage.getItem("libraryState");
+    if (saved) {
+      libraryState = JSON.parse(saved);
+      page = libraryState.page;
+    }
+
     const c = document.getElementById("content");
     c.style.display = "grid";
 
-    page = 1;
-    loadLibrary(false);
+    if (libraryState.html) {
+      c.innerHTML = libraryState.html;
+
+      setTimeout(() => {
+        window.scrollTo(0, libraryState.scrollY);
+      }, 0);
+    } else {
+      page = 1;
+      loadLibrary(false);
+    }
+
     setupScroll();
   }
 
@@ -25,11 +47,13 @@ const App = (() => {
     renderLibrary(data, append);
 
     loading = false;
+
+    // Guardar estado cada carga
+    saveLibraryState();
   }
 
   function renderLibrary(items, append) {
     const c = document.getElementById("content");
-
     if (!append) c.innerHTML = "";
 
     items.forEach(item => {
@@ -50,6 +74,9 @@ const App = (() => {
   }
 
   async function openManga(item) {
+    // 🔐 Guardar estado antes de navegar
+    saveLibraryState();
+
     scrollEnabled = false;
 
     const c = document.getElementById("content");
@@ -84,7 +111,7 @@ const App = (() => {
                   <div class="group-row">
                     <span class="group-name">${g.group || 'Scanlator'}</span>
                     <button class="btn-play"
-                      onclick="window.open('${g.play}','_system')">
+                      onclick="openViewer('${g.play}')">
                       LEER ▶
                     </button>
                   </div>
@@ -96,6 +123,31 @@ const App = (() => {
       </div>
     `;
   }
+
+  function openViewer(url) {
+    MangaView.getChapter(url).then(data => {
+
+      // Ocultar contenido principal
+      document.getElementById("content").style.display = "none";
+
+      // Mostrar lector
+      const reader = document.getElementById("reader");
+      reader.style.display = "block";
+      reader.innerHTML = `
+        <div class="reader-header">
+          <button onclick="App.closeReader()">← Volver</button>
+          <h3>${data.title} · Cap ${data.chapter}</h3>
+        </div>
+        <div id="reader-pages"></div>
+      `;
+
+      CascadeReader.init({
+        ...data,
+        container: "reader-pages"
+      });
+    });
+  }
+
 
   function setupScroll() {
     window.addEventListener("scroll", () => {
@@ -109,20 +161,44 @@ const App = (() => {
     });
   }
 
+  function saveLibraryState() {
+    const c = document.getElementById("content");
+
+    libraryState.page = page;
+    libraryState.scrollY = window.scrollY;
+    libraryState.html = c.innerHTML;
+
+    localStorage.setItem(
+      "libraryState",
+      JSON.stringify(libraryState)
+    );
+  }
+
   function back() {
     scrollEnabled = true;
     loading = false;
-    page = 1;
+
+    page = libraryState.page;
 
     const c = document.getElementById("content");
     c.style.display = "grid";
-    c.innerHTML = "";
+    c.innerHTML = libraryState.html;
 
-    loadLibrary(false);
+    setTimeout(() => {
+      window.scrollTo(0, libraryState.scrollY);
+    }, 0);
+  }
+  function closeReader() {
+    document.getElementById("reader").style.display = "none";
+    document.getElementById("reader").innerHTML = "";
+
+    const content = document.getElementById("content");
+    content.style.display = "block";
   }
 
   return {
-    back
+    back,
+    closeReader
   };
 
 })();

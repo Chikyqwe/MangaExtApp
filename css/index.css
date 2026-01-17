@@ -120,3 +120,27 @@ header {
   font-size: 11px;
   font-weight: bold;
 }
+#reader {
+  max-width: 900px;
+  margin: auto;
+  padding: 10px;
+}
+
+.page {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.page img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background: #111;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+}

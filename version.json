@@ -1,8 +1,9 @@
 {
-  "resourcesVersion": "1.0.6",
+  "resourcesVersion": "1.0.7",
   "files": [
     "core/http.js",
     "core/zonatmo.js",
+    "core/manga.js",
     "css/index.css",
     "index.html",
     "js/app.js"

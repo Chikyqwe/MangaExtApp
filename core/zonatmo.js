@@ -1,6 +1,6 @@
 const ZonaTMO = (() => {
 
-  async function cargarLibrary(page = 1) {
+  async function loadLibrary(page = 1) {
     const url = `https://zonatmo.com/library?_pg=${page}&page=${page}`;
     const html = await CoreHTTP.get(url);
     return parseLibrary(html);
@@ -93,7 +93,7 @@ const ZonaTMO = (() => {
   }
 
   return {
-    cargarLibrary,
+    loadLibrary,
     cargarManga
   };
 

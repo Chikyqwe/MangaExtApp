@@ -12,21 +12,26 @@
   <!-- Cordova -->
   <script src="cordova.js"></script>
 
-  <!-- CORE (lógica) -->
+  <!-- CORE -->
   <script src="core/http.js"></script>
   <script src="core/zonatmo.js"></script>
+  <script src="core/manga.js"></script>
 
-  <!-- APP UI -->
+  <!-- APP -->
   <script src="js/app.js"></script>
+  <script src="js/reader.js"></script>
 
-    <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/index.css" />
 </head>
 
 <body>
   <header>MangaExt</header>
 
-  <div id="content">
-    <!-- Cards dinámicas -->
-  </div>
+  <!-- Biblioteca / Detalles -->
+  <div id="content"></div>
+
+  <!-- Lector -->
+  <div id="reader" style="display:none;"></div>
+
 </body>
 </html>

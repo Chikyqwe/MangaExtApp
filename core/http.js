@@ -1,26 +1,79 @@
 const CoreHTTP = (() => {
 
   function init() {
-    cordova.plugin.http.setDataSerializer("utf8");
+    const http = cordova.plugin.http;
 
-    // Headers GLOBALS, uno por uno
-    cordova.plugin.http.setHeader(null, "User-Agent", "Mozilla/5.0 (Android)");
-    cordova.plugin.http.setHeader(null, "Accept", "text/html");
-    cordova.plugin.http.setHeader(null, "Referer", "https://zonatmo.com/");
+    http.setDataSerializer("utf8");
+    http.setFollowRedirect(true);
+
+    // Headers globales realistas
+    http.setHeader(
+      null,
+      "User-Agent",
+      "Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
+    );
+
+    http.setHeader(
+      null,
+      "Accept",
+      "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    );
+
+    http.setHeader(null, "Accept-Language", "es-ES,es;q=0.9");
+    http.setHeader(null, "Accept-Encoding", "gzip, deflate, br");
+    http.setHeader(null, "Connection", "keep-alive");
   }
 
-  function get(url) {
+  async function get(url, ref = "https://zonatmo.com/", depth = 0) {
+    const http = cordova.plugin.http;
+
+    // Seguridad: evitar loops infinitos
+    if (depth > 5) {
+      throw new Error("Demasiadas redirecciones (posible loop)");
+    }
+
+    http.setHeader(null, "Referer", ref);
+
     return new Promise((resolve, reject) => {
-      cordova.plugin.http.get(
+      http.get(
         url,
         {},
         {},
-        res => resolve(res.data),
-        err => reject(err)
+        async res => {
+          let html = res.data;
+
+          // 🔍 Detectar meta-refresh
+          const match = html.match(
+            /http-equiv=["']refresh["'][^>]*url=['"]?([^'">\s]+)/i
+          );
+
+          if (match && match[1]) {
+            const nextUrl = match[1];
+            console.log("[HTTP] META redirect →", nextUrl);
+
+            try {
+              const finalHtml = await get(nextUrl, url, depth + 1);
+              resolve(finalHtml);
+            } catch (e) {
+              reject(e);
+            }
+            return;
+          }
+
+          // HTML final válido
+          resolve(html);
+        },
+        err => {
+          console.error("[HTTP] ERROR:", err);
+          reject(err.error || err);
+        }
       );
     });
   }
 
-  return { init, get };
+  return {
+    init,
+    get
+  };
 
 })();
