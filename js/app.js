@@ -1,205 +1,261 @@
 const App = (() => {
 
-  let page = 1;
-  let loading = false;
-  let scrollEnabled = true;
+  /* ==========================
+     ESTADO GLOBAL
+  ========================== */
 
-  // 🧠 Estado persistente de la librería
-  let libraryState = {
-    page: 1,
-    scrollY: 0,
-    html: ""
+  const state = {
+    library: {
+      page: 1,
+      scrollY: 0,
+      items: [],
+      loading: false,
+      enabled: true
+    },
+    view: "library" // library | manga | reader
   };
+
+  const content = () => document.getElementById("content");
+  const reader  = () => document.getElementById("reader");
+
+  /* ==========================
+     INIT
+  ========================== */
 
   document.addEventListener("deviceready", init);
 
   async function init() {
     CoreHTTP.init();
+    restoreState();
+    setupEvents();
 
-    const saved = localStorage.getItem("libraryState");
-    if (saved) {
-      libraryState = JSON.parse(saved);
-      page = libraryState.page;
-    }
-
-    const c = document.getElementById("content");
-    c.style.display = "grid";
-
-    if (libraryState.html) {
-      c.innerHTML = libraryState.html;
-
-      setTimeout(() => {
-        window.scrollTo(0, libraryState.scrollY);
-      }, 0);
+    if (state.library.items.length) {
+      renderLibrary();
+      restoreScroll();
     } else {
-      page = 1;
-      loadLibrary(false);
+      await loadLibrary();
     }
-
-    setupScroll();
   }
 
-  async function loadLibrary(append = false) {
-    if (loading) return;
-    loading = true;
+  /* ==========================
+     ESTADO PERSISTENTE
+  ========================== */
 
-    const data = await ZonaTMO.loadLibrary(page);
-    renderLibrary(data, append);
-
-    loading = false;
-
-    // Guardar estado cada carga
-    saveLibraryState();
+  function saveState() {
+    localStorage.setItem("appState", JSON.stringify({
+      library: {
+        page: state.library.page,
+        scrollY: window.scrollY,
+        items: state.library.items
+      }
+    }));
   }
 
-  function renderLibrary(items, append) {
-    const c = document.getElementById("content");
-    if (!append) c.innerHTML = "";
+  function restoreState() {
+    const saved = localStorage.getItem("appState");
+    if (!saved) return;
 
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card";
+    try {
+      const parsed = JSON.parse(saved);
+      Object.assign(state.library, parsed.library || {});
+    } catch (e) {
+      console.warn("Estado corrupto, reiniciando");
+      localStorage.removeItem("appState");
+    }
+  }
 
-      card.innerHTML = `
-        <img src="${item.cover || ''}">
-        <div class="info">
-          <div class="title">${item.title}</div>
-          <div class="meta">${item.type || ''} ${item.demography || ''}</div>
-        </div>
-      `;
-
-      card.onclick = () => openManga(item);
-      c.appendChild(card);
+  function restoreScroll() {
+    requestAnimationFrame(() => {
+      window.scrollTo(0, state.library.scrollY || 0);
     });
   }
 
-  async function openManga(item) {
-    // 🔐 Guardar estado antes de navegar
-    saveLibraryState();
+  /* ==========================
+     EVENTOS
+  ========================== */
 
-    scrollEnabled = false;
+  function setupEvents() {
 
-    const c = document.getElementById("content");
+    /* Clicks (Event Delegation) */
+    content().addEventListener("click", e => {
+
+      const card = e.target.closest(".card");
+      if (card) {
+        openManga(card.dataset.url);
+        return;
+      }
+
+      const play = e.target.closest(".btn-play");
+      if (play) {
+        openViewer(play.dataset.url);
+        return;
+      }
+
+      const back = e.target.closest(".btn-back");
+      if (back) {
+        backToLibrary();
+        return;
+      }
+    });
+
+    /* Scroll infinito */
+    window.addEventListener("scroll", onScroll);
+  }
+
+  function onScroll() {
+    if (
+      !state.library.enabled ||
+      state.library.loading ||
+      state.view !== "library"
+    ) return;
+
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+      loadLibrary(true);
+    }
+  }
+
+  /* ==========================
+     LIBRARY
+  ========================== */
+
+  async function loadLibrary(append = false) {
+    if (state.library.loading) return;
+
+    state.library.loading = true;
+
+    try {
+      const data = await ZonaTMO.loadLibrary(state.library.page);
+
+      if (!append) state.library.items = [];
+      state.library.items.push(...data);
+      state.library.page++;
+
+      renderLibrary();
+      saveState();
+
+    } catch (e) {
+      console.error("Error cargando librería", e);
+    } finally {
+      state.library.loading = false;
+    }
+  }
+
+  function renderLibrary() {
+    const c = content();
+    c.style.display = "grid";
+
+    c.innerHTML = state.library.items.map(item => `
+      <div class="card" data-url="${item.url}">
+        <img src="${item.cover || ""}">
+        <div class="info">
+          <div class="title">${item.title}</div>
+          <div class="meta">${item.type || ""} ${item.demography || ""}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  /* ==========================
+     MANGA
+  ========================== */
+
+  async function openManga(url) {
+    saveState();
+
+    state.view = "manga";
+    state.library.enabled = false;
+
+    const c = content();
     c.style.display = "block";
     c.innerHTML = "Cargando...";
 
-    const data = await ZonaTMO.cargarManga(item.url);
-    renderManga(data);
+    try {
+      const data = await ZonaTMO.cargarManga(url);
+      renderManga(data);
+    } catch (e) {
+      c.innerHTML = "Error cargando manga";
+    }
   }
 
   function renderManga(data) {
-    const c = document.getElementById("content");
-
-    c.innerHTML = `
+    content().innerHTML = `
       <div class="manga-detail">
-        <button class="btn-back" onclick="App.back()">← Volver a la biblioteca</button>
+
+        <button class="btn-back">← Volver</button>
 
         <div class="header-detail">
-          <img src="${data.cover}" class="cover-detail">
-          <div class="info-detail">
+          <img src="${data.cover}">
+          <div>
             <h2>${data.title}</h2>
-            <p>${data.chapters.length} Capítulos encontrados</p>
+            <p>${data.chapters.length} capítulos</p>
           </div>
         </div>
 
-        <div class="chapters-container">
+        <div class="chapters">
           ${data.chapters.map(ch => `
-            <div class="chapter-item">
-              <div class="chapter-number">${ch.title}</div>
-              <div class="groups-list">
-                ${ch.groups.map(g => `
-                  <div class="group-row">
-                    <span class="group-name">${g.group || 'Scanlator'}</span>
-                    <button class="btn-play"
-                      onclick="App.openViewer('${g.play}')">
-                      LEER ▶
-                    </button>
-                  </div>
-                `).join("")}
-              </div>
+            <div class="chapter">
+              <div class="chapter-title">${ch.title}</div>
+              ${ch.groups.map(g => `
+                <button class="btn-play" data-url="${g.play}">
+                  LEER ▶ ${g.group || ""}
+                </button>
+              `).join("")}
             </div>
           `).join("")}
         </div>
+
       </div>
     `;
   }
 
-  function openViewer(url) {
-    MangaView.getChapter(url).then(data => {
+  function backToLibrary() {
+    state.view = "library";
+    state.library.enabled = true;
 
-      // Ocultar contenido principal
-      document.getElementById("content").style.display = "none";
+    renderLibrary();
+    restoreScroll();
+  }
 
-      // Mostrar lector
-      const reader = document.getElementById("reader");
-      reader.style.display = "block";
-      reader.innerHTML = `
-        <div class="reader-header">
-          <button onclick="App.closeReader()">← Volver</button>
-          <h3>${data.title} · Cap ${data.chapter}</h3>
-        </div>
-        <div id="reader-pages"></div>
-      `;
+  /* ==========================
+     READER
+  ========================== */
 
-      CascadeReader.init({
-        ...data,
-        container: "reader-pages"
-      });
+  async function openViewer(url) {
+    state.view = "reader";
+
+    content().style.display = "none";
+    reader().style.display = "block";
+
+    const data = await MangaView.getChapter(url);
+
+    reader().innerHTML = `
+      <div class="reader-header">
+        <button onclick="App.closeReader()">← Volver</button>
+        <h3>${data.title} · Cap ${data.chapter}</h3>
+      </div>
+      <div id="reader-pages"></div>
+    `;
+
+    CascadeReader.init({
+      ...data,
+      container: "reader-pages"
     });
   }
 
-
-  function setupScroll() {
-    window.addEventListener("scroll", () => {
-      if (!scrollEnabled || loading) return;
-
-      if (window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 150) {
-        page++;
-        loadLibrary(true);
-      }
-    });
-  }
-
-  function saveLibraryState() {
-    const c = document.getElementById("content");
-
-    libraryState.page = page;
-    libraryState.scrollY = window.scrollY;
-    libraryState.html = c.innerHTML;
-
-    localStorage.setItem(
-      "libraryState",
-      JSON.stringify(libraryState)
-    );
-  }
-
-  function back() {
-    scrollEnabled = true;
-    loading = false;
-
-    page = libraryState.page;
-
-    const c = document.getElementById("content");
-    c.style.display = "grid";
-    c.innerHTML = libraryState.html;
-
-    setTimeout(() => {
-      window.scrollTo(0, libraryState.scrollY);
-    }, 0);
-  }
   function closeReader() {
-    document.getElementById("reader").style.display = "none";
-    document.getElementById("reader").innerHTML = "";
+    reader().style.display = "none";
+    reader().innerHTML = "";
 
-    const content = document.getElementById("content");
-    content.style.display = "block";
+    content().style.display = "block";
+    state.view = "manga";
   }
+
+  /* ==========================
+     API PUBLICA
+  ========================== */
 
   return {
-    back,
-    closeReader,
-    openViewer
+    closeReader
   };
 
 })();
