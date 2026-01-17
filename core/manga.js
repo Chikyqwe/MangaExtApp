@@ -143,27 +143,27 @@ const CascadeReader = (() => {
   }
   function downloadImage(url, referer = "https://zonatmo.com/") {
     return new Promise((resolve, reject) => {
-      const filename =
-        "img_" + btoa(url).replace(/[^a-z0-9]/gi, "").slice(0, 40);
+      const fileName = "img_" + Date.now() + ".webp";
+      const filePath = cordova.file.cacheDirectory + fileName;
 
-      const path = cordova.file.cacheDirectory + filename;
-
-      cordova.plugin.http.download(
+      cordova.plugin.http.downloadFile(
         url,
-        {},
+        {}, // params
         {
           "Referer": referer,
           "User-Agent":
-            "Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
+            "Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
           "Accept": "image/webp,image/*,*/*"
         },
-        path,
-        entry => resolve(entry.toURL()),
+        filePath,
+        entry => {
+          // entry es la ruta local
+          resolve(entry);
+        },
         err => reject(err)
       );
     });
   }
-
   function createObserver() {
     observer = new IntersectionObserver(entries => {
       entries.forEach(async entry => {
