@@ -163,7 +163,7 @@ const CascadeReader = (() => {
         err => reject(err)
       );
     });
-  }
+  }0
   function createObserver() {
     observer = new IntersectionObserver(entries => {
       entries.forEach(async entry => {
@@ -178,7 +178,7 @@ const CascadeReader = (() => {
             referer
           );
 
-          img.src = localUrl;
+          img.src = localUrl.nativeURL;
 
           img.onload = () => {
             entry.target.classList.remove("loading");
