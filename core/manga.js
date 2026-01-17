@@ -107,6 +107,7 @@ const CascadeReader = (() => {
   let referer = "https://zonatmo.com/";
 
   function init(chapterData) {
+    console.log("CascadeReader init", chapterData);
     pages = chapterData.images;
     index = 0;
     referer = chapterData.referer || referer;
