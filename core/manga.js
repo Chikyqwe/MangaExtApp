@@ -4,8 +4,10 @@ const MangaView = (() => {
     const html = await CoreHTTP.get(url);
     return parseChapter(html, url);
   }
-
   function parseChapter(html, url) {
+    console.groupCollapsed("📘 parseChapter");
+    console.log("URL:", url);
+
     const doc = new DOMParser().parseFromString(html, "text/html");
 
     // ---------- DATOS BÁSICOS ----------
@@ -26,23 +28,98 @@ const MangaView = (() => {
         ? "LTR"
         : "RTL";
 
+    console.log("Título:", title);
+    console.log("Capítulo:", chapter);
+    console.log("Scanlation:", scanlation);
+    console.log("Dirección:", readingDirection);
+
     // ---------- IMÁGENES ----------
     let images = [];
 
-    // 1️⃣ Intentar obtenerlas del DOM
-    doc.querySelectorAll("img.viewer-img").forEach(img => {
+    // 1️⃣ Intentar desde DOM
+    doc.querySelectorAll("img.viewer-img").forEach((img, i) => {
       const src = img.getAttribute("data-src") || img.getAttribute("src");
-      if (src) images.push(src);
+      if (src) {
+        images.push(src);
+        console.log(`🖼️ DOM img[${i}]`, src);
+      }
     });
 
-    // 2️⃣ Fallback a variables globales
-    if (images.length === 0 && Array.isArray(window.images) && window.dirPath) {
-      images = window.images.map(img => window.dirPath + img);
+    if (images.length > 0) {
+      console.log(`✅ Imágenes desde DOM: ${images.length}`);
+    } else {
+      console.warn("⚠️ No hay imágenes en DOM, buscando en <script>");
+
+      // 2️⃣ Fallback: SCRIPT INLINE
+      let dirPath = null;
+      let scriptImages = null;
+
+      doc.querySelectorAll("script").forEach((script, i) => {
+        const text = script.textContent;
+        if (!text) return;
+
+        // ---- dirPath ----
+        const dirMatch = text.match(
+          /(var|let|const)\s+dirPath\s*=\s*['"]([^'"]+)['"]/
+        );
+        if (dirMatch) {
+          dirPath = dirMatch[2];
+          console.log(`📂 dirPath encontrado (script ${i})`, dirPath);
+        }
+
+        // ---- images = [...] ----
+        let imagesMatch = text.match(
+          /(var|let|const)\s+images\s*=\s*(\[[\s\S]*?\]);/
+        );
+
+        // ---- images = JSON.parse('...') ----
+        if (!imagesMatch) {
+          imagesMatch = text.match(
+            /(var|let|const)\s+images\s*=\s*JSON\.parse\(\s*['"]([\s\S]*?)['"]\s*\)/
+          );
+          if (imagesMatch) {
+            try {
+              scriptImages = JSON.parse(imagesMatch[2]);
+              console.log(
+                `🧩 images JSON.parse encontrado (script ${i})`,
+                scriptImages.length,
+                "items"
+              );
+            } catch (e) {
+              console.error("❌ Error parseando JSON.parse(images)", e);
+            }
+          }
+        } else {
+          try {
+            scriptImages = JSON.parse(imagesMatch[2]);
+            console.log(
+              `🧩 images array literal encontrado (script ${i})`,
+              scriptImages.length,
+              "items"
+            );
+          } catch (e) {
+            console.error("❌ Error parseando images array", e);
+          }
+        }
+      });
+
+      if (dirPath && Array.isArray(scriptImages)) {
+        images = scriptImages.map((img, i) => {
+          const full = dirPath + img;
+          console.log(`🖼️ SCRIPT img[${i}]`, full);
+          return full;
+        });
+        console.log(`✅ Imágenes reconstruidas desde script: ${images.length}`);
+      } else {
+        console.error("❌ No se pudieron obtener imágenes desde script");
+      }
     }
 
     // ---------- COVER ----------
     const cover =
       doc.querySelector('meta[property="og:image"]')?.content || "";
+
+    console.log("Cover:", cover || "NO");
 
     // ---------- NAVEGACIÓN ----------
     const prev =
@@ -51,13 +128,19 @@ const MangaView = (() => {
     const next =
       doc.querySelector(".chapter-next a")?.href || null;
 
+    console.log("Prev:", prev);
+    console.log("Next:", next);
+
     // ---------- METADATA ----------
-    const published =
-      doc.querySelector('script[type="application/ld+json"]')
-        ? JSON.parse(
-            doc.querySelector('script[type="application/ld+json"]').textContent
-          ).datePublished
-        : null;
+    let published = null;
+    const ldJson = doc.querySelector('script[type="application/ld+json"]');
+    if (ldJson) {
+      try {
+        published = JSON.parse(ldJson.textContent).datePublished || null;
+      } catch (e) {
+        console.warn("LD+JSON inválido");
+      }
+    }
 
     const ogUrl =
       doc.querySelector('meta[property="og:url"]')?.content || url;
@@ -65,13 +148,11 @@ const MangaView = (() => {
     const uploadIdMatch = ogUrl.match(/viewer\/([^/]+)/);
     const uploadId = uploadIdMatch ? uploadIdMatch[1] : null;
 
-    // ---------- SHARE LINKS ----------
-    const share = {
-      facebook: doc.querySelector('.btn-facebook')?.href || null,
-      twitter: doc.querySelector('.btn-twitter')?.href || null,
-      telegram: doc.querySelector('.btn-telegram')?.href || null,
-      whatsapp: doc.querySelector('.btn-whatsapp')?.href || null
-    };
+    console.log("Viewer URL:", ogUrl);
+    console.log("Upload ID:", uploadId);
+    console.log("Total páginas:", images.length);
+
+    console.groupEnd();
 
     // ---------- JSON FINAL ----------
     return {
@@ -95,11 +176,15 @@ const MangaView = (() => {
       next,
 
       published,
-      share
+
+      share: {
+        facebook: doc.querySelector(".btn-facebook")?.href || null,
+        twitter: doc.querySelector(".btn-twitter")?.href || null,
+        telegram: doc.querySelector(".btn-telegram")?.href || null,
+        whatsapp: doc.querySelector(".btn-whatsapp")?.href || null
+      }
     };
   }
-
-
   return {
     getChapter
   };
