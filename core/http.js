@@ -27,7 +27,6 @@ const CoreHTTP = (() => {
   async function get(url, ref = "https://zonatmo.com/", depth = 0) {
     const http = cordova.plugin.http;
 
-    // Seguridad: evitar loops infinitos
     if (depth > 5) {
       throw new Error("Demasiadas redirecciones (posible loop)");
     }
@@ -39,10 +38,9 @@ const CoreHTTP = (() => {
         url,
         {},
         {},
-        async res => {
+        function (res) { // ❌ NO async
           let html = res.data;
 
-          // 🔍 Detectar meta-refresh
           const match = html.match(
             /http-equiv=["']refresh["'][^>]*url=['"]?([^'">\s]+)/i
           );
@@ -51,25 +49,22 @@ const CoreHTTP = (() => {
             const nextUrl = match[1];
             console.log("[HTTP] META redirect →", nextUrl);
 
-            try {
-              const finalHtml = await get(nextUrl, url, depth + 1);
-              resolve(finalHtml);
-            } catch (e) {
-              reject(e);
-            }
+            get(nextUrl, url, depth + 1)
+              .then(resolve)
+              .catch(reject);
             return;
           }
 
-          // HTML final válido
           resolve(html);
         },
-        err => {
+        function (err) {
           console.error("[HTTP] ERROR:", err);
           reject(err.error || err);
         }
       );
     });
   }
+
 
   return {
     init,
