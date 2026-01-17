@@ -104,23 +104,51 @@ const CascadeReader = (() => {
   let pages = [];
   let index = 0;
   let observer = null;
+  let referer = "https://zonatmo.com/";
 
   function init(chapterData) {
     pages = chapterData.images;
     index = 0;
+    referer = chapterData.referer || referer;
 
     const reader = document.getElementById(
-        chapterData.container || "reader"
+      chapterData.container || "reader"
     );
 
     reader.innerHTML = "";
     reader.style.direction =
-        chapterData.readingDirection === "LTR" ? "ltr" : "rtl";
+      chapterData.readingDirection === "LTR" ? "ltr" : "rtl";
 
-    createObserver(reader);
-    loadNext(reader);
-    }
-        
+    createObserver();
+    loadNext();
+  }
+  function fetchImageAsBase64(url, referer = "https://zonatmo.com/") {
+    return new Promise((resolve, reject) => {
+      cordova.plugin.http.get(
+        url,
+        {},
+        {
+          "Referer": referer,
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
+          "Accept": "image/webp,image/*,*/*"
+        },
+        res => {
+          try {
+            const binary = res.data;
+            const base64 = btoa(
+              unescape(encodeURIComponent(binary))
+            );
+            resolve("data:image/webp;base64," + base64);
+          } catch (e) {
+            reject(e);
+          }
+        },
+        err => reject(err)
+      );
+    });
+  }
+
   function loadNext() {
     if (index >= pages.length) return;
 
@@ -130,7 +158,8 @@ const CascadeReader = (() => {
     page.className = "page loading";
 
     const img = document.createElement("img");
-    img.dataset.src = pages[index];
+    img.dataset.src = pages[index]; // URL real
+    img.loading = "lazy";
 
     page.appendChild(img);
     reader.appendChild(page);
@@ -141,17 +170,27 @@ const CascadeReader = (() => {
 
   function createObserver() {
     observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
+      entries.forEach(async entry => {
         if (!entry.isIntersecting) return;
 
         const img = entry.target.querySelector("img");
-        if (img && !img.src) {
-          img.src = img.dataset.src;
+        if (!img || img.src) return;
+
+        try {
+          const b64 = await fetchImageAsBase64(
+            img.dataset.src,
+            referer
+          );
+
+          img.src = b64;
 
           img.onload = () => {
             entry.target.classList.remove("loading");
             loadNext();
           };
+
+        } catch (e) {
+          console.error("IMG ERROR", e);
         }
 
         observer.unobserve(entry.target);
@@ -161,8 +200,7 @@ const CascadeReader = (() => {
     });
   }
 
-  return {
-    init
-  };
+  return { init };
 
 })();
+
