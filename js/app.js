@@ -43,7 +43,7 @@ const App = (() => {
     if (loading) return;
     loading = true;
 
-    const data = await ZonaTMO.cargarLibrary(page);
+    const data = await ZonaTMO.loadLibrary(page);
     renderLibrary(data, append);
 
     loading = false;
