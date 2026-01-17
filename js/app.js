@@ -149,7 +149,7 @@ const App = (() => {
       reader.style.display = "block";
       reader.innerHTML = `
         <div class="reader-header">
-          <button onclick="App.closeReader()">← Volver</button>
+          <button class="btn-back" onclick="App.closeReader()">← Volver</button>
           <h3>${data.title} · Cap ${data.chapter}</h3>
         </div>
         <div id="reader-pages"></div>

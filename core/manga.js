@@ -106,6 +106,9 @@ const CascadeReader = (() => {
   let observer = null;
   let referer = "https://zonatmo.com/";
 
+  let downloading = 0;
+  const MAX_PARALLEL = 2;
+
   function init(chapterData) {
     pages = chapterData.images;
     index = 0;
@@ -120,7 +123,11 @@ const CascadeReader = (() => {
       chapterData.readingDirection === "LTR" ? "ltr" : "rtl";
 
     createObserver();
-    loadNext();
+
+    // Pre-carga inicial
+    for (let i = 0; i < MAX_PARALLEL; i++) {
+      loadNext();
+    }
   }
 
   function loadNext() {
@@ -132,7 +139,7 @@ const CascadeReader = (() => {
     page.className = "page loading";
 
     const img = document.createElement("img");
-    img.dataset.src = pages[index]; // URL remota
+    img.dataset.src = pages[index];
     img.loading = "lazy";
 
     page.appendChild(img);
@@ -141,14 +148,15 @@ const CascadeReader = (() => {
     observer.observe(page);
     index++;
   }
-  function downloadImage(url, referer = "https://zonatmo.com/") {
+
+  function downloadImage(url, referer) {
     return new Promise((resolve, reject) => {
-      const fileName = "img_" + Date.now() + ".webp";
+      const fileName = "img_" + Date.now() + "_" + Math.random().toString(36).slice(2) + ".webp";
       const filePath = cordova.file.cacheDirectory + fileName;
 
       cordova.plugin.http.downloadFile(
         url,
-        {}, // params
+        {},
         {
           "Referer": referer,
           "User-Agent":
@@ -156,43 +164,42 @@ const CascadeReader = (() => {
           "Accept": "image/webp,image/*,*/*"
         },
         filePath,
-        entry => {
-          // entry es la ruta local
-          resolve(entry);
-        },
+        entry => resolve(entry.nativeURL),
         err => reject(err)
       );
     });
-  }0
+  }
+
   function createObserver() {
     observer = new IntersectionObserver(entries => {
-      entries.forEach(async entry => {
+      entries.forEach(entry => {
         if (!entry.isIntersecting) return;
 
         const img = entry.target.querySelector("img");
-        if (!img || img.src) return;
+        if (!img || img.src || downloading >= MAX_PARALLEL) return;
 
-        try {
-          const localUrl = await downloadImage(
-            img.dataset.src,
-            referer
-          );
+        downloading++;
 
-          img.src = localUrl.nativeURL;
+        downloadImage(img.dataset.src, referer)
+          .then(localUrl => {
+            img.src = localUrl;
 
-          img.onload = () => {
-            entry.target.classList.remove("loading");
-            loadNext();
-          };
-
-        } catch (e) {
-          console.error("IMG DOWNLOAD ERROR", e);
-        }
+            img.onload = () => {
+              entry.target.classList.remove("loading");
+            };
+          })
+          .catch(err => {
+            console.error("IMG DOWNLOAD ERROR", err);
+          })
+          .finally(() => {
+            downloading--;
+            loadNext(); // mantiene el pipeline lleno
+          });
 
         observer.unobserve(entry.target);
       });
     }, {
-      rootMargin: "200px"
+      rootMargin: "300px"
     });
   }
 
