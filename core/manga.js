@@ -27,11 +27,18 @@ const MangaView = (() => {
         : "RTL";
 
     // ---------- IMÁGENES ----------
-    const images = [];
+    let images = [];
+
+    // 1️⃣ Intentar obtenerlas del DOM
     doc.querySelectorAll("img.viewer-img").forEach(img => {
-      const src = img.getAttribute("data-src");
+      const src = img.getAttribute("data-src") || img.getAttribute("src");
       if (src) images.push(src);
     });
+
+    // 2️⃣ Fallback a variables globales
+    if (images.length === 0 && Array.isArray(window.images) && window.dirPath) {
+      images = window.images.map(img => window.dirPath + img);
+    }
 
     // ---------- COVER ----------
     const cover =
@@ -91,6 +98,7 @@ const MangaView = (() => {
       share
     };
   }
+
 
   return {
     getChapter
