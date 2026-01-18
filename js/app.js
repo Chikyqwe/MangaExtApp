@@ -165,11 +165,19 @@ const App = (() => {
      LECTOR
   ======================= */
 
-function openViewer(url, nextChapter = null) {
+const btnChaptersHeader = document.getElementById("btnChaptersHeader");
+const chapterMenu = document.getElementById("chapterMenu");
+
+btnChaptersHeader.addEventListener("click", () => {
+  chapterMenu.classList.toggle("active");
+});
+
+// Función para abrir reader y guardar capítulos
+function openViewer(url, chapters = [], currentIndex = 0) {
   const content = document.getElementById("content");
   const reader = document.getElementById("reader");
 
-  // Ocultar solo contenido y botón de búsqueda
+  // Ocultar contenido y botón búsqueda
   content.style.display = "none";
   document.getElementById("toggleSearchBtn").style.display = "none";
   document.getElementById("searchBar").classList.remove("active");
@@ -177,12 +185,20 @@ function openViewer(url, nextChapter = null) {
   reader.style.display = "block";
   reader.innerHTML = `
     <div class="reader-header">
-      <button class="btn-back" id="btnChapters">📖 Capítulos</button>
       <h3 id="chapterTitle">Cargando capítulo...</h3>
     </div>
     <div id="reader-pages"></div>
     <div id="reader-footer" style="margin-top:15px; text-align:center;"></div>
   `;
+
+  // Llenar menú capítulos
+  chapterMenu.innerHTML = "";
+  chapters.forEach((ch, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = ch.title;
+    btn.onclick = () => openViewer(ch.url, chapters, i);
+    chapterMenu.appendChild(btn);
+  });
 
   MangaView.getChapter(url).then(data => {
     document.getElementById("chapterTitle").textContent = `${data.title} · Cap ${data.chapter}`;
@@ -191,29 +207,30 @@ function openViewer(url, nextChapter = null) {
       ...data,
       container: "reader-pages",
       onEnd: () => {
-        if (data.next) addNextButton(data.next); // next capítulo
+        // Si hay siguiente capítulo
+        const next = chapters[currentIndex + 1];
+        if (next) addNextButton(next.url, chapters, currentIndex + 1);
       }
     });
-
-    // Botón volver a capítulos del manga
-    document.getElementById("btnChapters").onclick = () => {
-      // Mostrar contenido y botón búsqueda nuevamente
-      content.style.display = "grid";
-      document.getElementById("toggleSearchBtn").style.display = "block";
-      reader.style.display = "none";
-      reader.innerHTML = "";
-    };
   });
 }
 
-// Crear botón Siguiente capítulo al final del reader
-function addNextButton(nextChapterUrl) {
-  if (!nextChapterUrl) return;
+// Botón Siguiente
+function addNextButton(nextUrl, chapters, nextIndex) {
   const footer = document.getElementById("reader-footer");
   footer.innerHTML = `<button class="btn-play" id="btnNext">▶ Siguiente</button>`;
   document.getElementById("btnNext").onclick = () => {
-    openViewer(nextChapterUrl);
+    openViewer(nextUrl, chapters, nextIndex);
   };
+}
+
+// Al cerrar reader, restaurar botones
+function closeReader() {
+  document.getElementById("reader").style.display = "none";
+  document.getElementById("reader").innerHTML = "";
+  document.getElementById("toggleSearchBtn").style.display = "block";
+  document.getElementById("content").style.display = "grid";
+  chapterMenu.classList.remove("active");
 }
 
 
