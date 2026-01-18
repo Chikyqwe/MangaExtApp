@@ -165,30 +165,49 @@ const App = (() => {
      LECTOR
   ======================= */
 
-  function openViewer(url) {
-    currentView = "reader";
+function openViewer(url, nextChapter = null) {
+  // Ocultar todo lo que distraiga
+  document.getElementById("content").style.display = "none";
+  document.getElementById("searchBar").classList.remove("active");
+  document.querySelector(".header-container").style.display = "none";
 
-    MangaView.getChapter(url).then(data => {
-      document.getElementById("content").style.display = "none";
+  const reader = document.getElementById("reader");
+  reader.style.display = "block";
+  reader.innerHTML = `
+    <div class="reader-header">
+      <button class="btn-back" id="btnChapters">Capítulos</button>
+      <h3 id="chapterTitle">Cargando capítulo...</h3>
+    </div>
+    <div id="reader-pages"></div>
+    <div id="reader-footer" style="margin-top:15px; text-align:center;"></div>
+  `;
 
-      const reader = document.getElementById("reader");
-      reader.style.display = "block";
-      reader.innerHTML = `
-        <div class="reader-header">
-          <button class="btn-back">← Volver</button>
-          <h3>${data.title} · Cap ${data.chapter}</h3>
-        </div>
-        <div id="reader-pages"></div>
-      `;
+  MangaView.getChapter(url).then(data => {
+    document.getElementById("chapterTitle").textContent = `${data.title} · Cap ${data.chapter}`;
 
-      reader.querySelector(".btn-back").onclick = closeReader;
-
-      CascadeReader.init({
-        ...data,
-        container: "reader-pages"
-      });
+    CascadeReader.init({
+      ...data,
+      container: "reader-pages",
+      onEnd: () => addNextButton(nextChapter)
     });
-  }
+
+    // Botón volver a capítulos
+    document.getElementById("btnChapters").onclick = () => {
+      closeReader();
+      App.back(); // vuelve a la biblioteca o lista de capítulos
+    };
+  });
+}
+
+// Agregar botón "Siguiente" al final del capítulo
+function addNextButton(nextChapterUrl) {
+  if (!nextChapterUrl) return;
+  const footer = document.getElementById("reader-footer");
+  footer.innerHTML = `<button class="btn-play" id="btnNext">▶ Siguiente</button>`;
+  document.getElementById("btnNext").onclick = () => {
+    openViewer(nextChapterUrl);
+  };
+}
 
   function closeReader() {
     currentView = "manga";

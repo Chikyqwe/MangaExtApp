@@ -224,3 +224,31 @@ header {
   align-items: center;
   justify-content: center;
 }
+/* Reader header */
+.reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#reader-pages {
+  max-width: 900px;
+  margin: auto;
+  padding: 10px;
+}
+
+/* Botón capítulos y siguiente */
+#btnChapters, #btnNext {
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#reader-footer {
+  margin-top: 20px;
+}
