@@ -144,3 +144,36 @@ header {
   padding: 20px;
   color: #aaa;
 }
+.search-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 15px;
+  background: #121212;
+  position: sticky;
+  top: 60px; /* altura del header */
+  z-index: 90;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #222;
+  background: #161616;
+  color: #eee;
+  outline: none;
+}
+
+.search-bar input::placeholder {
+  color: #aaa;
+}
+
+.search-bar button {
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: bold;
+}

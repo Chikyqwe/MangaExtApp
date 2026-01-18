@@ -10,26 +10,51 @@ const ZonaTMO = (() => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const result = [];
 
-    doc.querySelectorAll(".element").forEach(el => {
-      const title = el.querySelector(".thumbnail-title h4")?.textContent.trim();
-      const url = el.querySelector("a")?.href;
-      const type = el.querySelector(".book-type")?.textContent.trim();
-      const demo = el.querySelector(".demography")?.textContent.trim();
+    doc.querySelectorAll(".element[data-identifier]").forEach(el => {
+      const title =
+        el.querySelector(".thumbnail-title h4")?.textContent.trim() || null;
+
+      const url =
+        el.querySelector("a")?.href || null;
+
+      const type =
+        el.querySelector(".book-type")?.textContent.trim() || null;
+
+      const demography =
+        el.querySelector(".demography")?.textContent.trim() || null;
+
+      const id = el.dataset.identifier
+        ? Number(el.dataset.identifier)
+        : null;
+
+      const scoreText =
+        el.querySelector(".score span")?.textContent || null;
+      const score = scoreText ? parseFloat(scoreText) : null;
+
+      const isErotic = !!el.querySelector(".fa-heartbeat");
 
       let cover = null;
-      const style = el.querySelector("style")?.textContent;
-      if (style) {
-        const m = style.match(/url\('(.+?)'\)/);
-        if (m) cover = m[1];
-      }
+      const style = el.querySelector("style")?.textContent || "";
+      const match = style.match(/background-image:\s*url\(['"]?(.*?)['"]?\)/);
+      if (match) cover = match[1];
 
-      if (title && url) {
-        result.push({ title, url, type, demography: demo, cover });
-      }
+      if (!title || !url) return;
+
+      result.push({
+        id,
+        title,
+        url,
+        type,
+        demography,
+        score,
+        isErotic,
+        cover
+      });
     });
 
     return result;
   }
+
 
   async function cargarManga(url) {
     const html = await CoreHTTP.get(url);
@@ -91,10 +116,66 @@ const ZonaTMO = (() => {
     
     return { title, cover, chapters, type, demography, status, description, genres, synonyms, subtitle };
   }
+  async function search(query, page = 1) {
+    const url =
+      `https://zonatmo.com/library?title=${encodeURIComponent(query)}&_pg=${page}&page=${page}`;
+
+    const html = await CoreHTTP.get(url);
+    return parseSearch(html);
+  }
+  function parseSearch(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const results = [];
+
+    doc.querySelectorAll(".element[data-identifier]").forEach(el => {
+      const id = el.dataset.identifier;
+
+      const link = el.querySelector("a")?.href?.trim() || "";
+
+      const title =
+        el.querySelector(".thumbnail-title h4")?.textContent.trim() || "";
+
+      // cover desde el <style>
+      let cover = "";
+      const style = el.querySelector("style")?.textContent || "";
+      const coverMatch = style.match(/background-image:\s*url\(['"]?(.*?)['"]?\)/);
+      if (coverMatch) cover = coverMatch[1];
+
+      const scoreText =
+        el.querySelector(".score span")?.textContent || "0";
+      const score = parseFloat(scoreText) || 0;
+
+      const type =
+        el.querySelector(".book-type")?.textContent.trim() || "";
+
+      const demography =
+        el.querySelector(".demography")?.textContent.trim() || null;
+
+      const isErotic = !!el.querySelector(".fa-heartbeat");
+
+      results.push({
+        site: "ZonaTMO",
+        id: Number(id),
+        title,
+        url: link,
+        cover,
+        score,
+        type,
+        demography,
+        isErotic
+      });
+    });
+
+    return {
+      total: results.length,
+      results
+    };
+  }
 
   return {
     loadLibrary,
-    cargarManga
+    cargarManga,
+    search
   };
 
 })();
