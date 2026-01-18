@@ -144,7 +144,6 @@ header {
   padding: 20px;
   color: #aaa;
 }
-/* Header */
 header {
   background: #121212;
   border-bottom: 1px solid #222;
@@ -154,17 +153,10 @@ header {
   z-index: 100;
 }
 
-/* Contenedor flex logo + botón */
 .header-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-/* Logo */
-.logo-container {
-  display: flex;
-  align-items: center;
 }
 
 .logo-svg {
@@ -172,8 +164,8 @@ header {
   width: auto;
 }
 
-/* Botón de búsqueda visible y destacado */
-.search-btn-container button {
+/* Botón tipo < animado */
+.menu-icon-container button.menu-icon {
   background: #00cfff;
   border: none;
   padding: 10px 14px;
@@ -181,11 +173,14 @@ header {
   color: #121212;
   font-size: 20px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.search-btn-container button:hover {
-  transform: scale(1.1);
+.menu-icon-container button.menu-icon.active {
+  transform: rotate(90deg); /* rota al desplegar barra */
 }
 
 /* Barra de búsqueda desplegable */
@@ -225,7 +220,6 @@ header {
   border-radius: 6px;
   padding: 0 12px;
   cursor: pointer;
-  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;

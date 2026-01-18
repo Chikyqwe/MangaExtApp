@@ -23,36 +23,37 @@
 </head>
 
 <body>
-  <header>
-    <div class="header-container">
-      <!-- Logo SVG -->
-      <div class="logo-container">
-        <svg viewBox="0 0 400 120" class="logo-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-          <text x="10" y="60" font-family="Alice, serif" font-size="36" font-weight="bold">
-            <tspan class="main-text" fill="#eeeeeeff">Manga </tspan>
-            <tspan class="ext-text" fill="#00cfff">EXT</tspan>
-          </text>
-          <path d="M220,30 L230,60 L220,90" stroke="#3C873A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-          <text x="100" y="90" text-anchor="middle" font-family="sans-serif" font-size="14" class="subtext" fill="#f3f3f3ff">
-            私たちはマンガを愛しています
-          </text>
-        </svg>
-      </div>
-
-      <!-- Botón de búsqueda destacado -->
-      <div class="search-btn-container">
-        <button id="toggleSearchBtn" title="Buscar manga">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
+<header>
+  <div class="header-container">
+    <!-- Logo SVG -->
+    <div class="logo-container">
+      <svg viewBox="0 0 400 120" class="logo-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <text x="10" y="60" font-family="Alice, serif" font-size="36" font-weight="bold">
+          <tspan class="main-text" fill="#eeeeeeff">Manga </tspan>
+          <tspan class="ext-text" fill="#00cfff">EXT</tspan>
+        </text>
+        <path d="M220,30 L230,60 L220,90" stroke="#3C873A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="100" y="90" text-anchor="middle" font-family="sans-serif" font-size="14" class="subtext" fill="#f3f3f3ff">
+          私たちはマンガを愛しています
+        </text>
+      </svg>
     </div>
 
-    <!-- Barra de búsqueda desplegable -->
-    <div class="search-bar" id="searchBar">
-      <input type="search" id="searchInput" placeholder="Buscar manga..." autocomplete="off" />
-      <button id="searchBtn"><i class="bi bi-search"></i></button>
+    <!-- Icono tipo < que indica menú desplegable -->
+    <div class="menu-icon-container">
+      <button id="toggleSearchBtn" class="menu-icon">
+        <i class="bi bi-chevron-left"></i>
+      </button>
     </div>
-  </header>
+  </div>
+
+  <!-- Barra de búsqueda desplegable -->
+  <div class="search-bar" id="searchBar">
+    <input type="search" id="searchInput" placeholder="Buscar manga..." autocomplete="off" />
+    <button id="searchBtn"><i class="bi bi-search"></i></button>
+  </div>
+</header>
+
 
   <!-- Biblioteca / Detalles -->
   <div id="content"></div>
@@ -65,6 +66,7 @@
 
     toggleSearchBtn.addEventListener("click", () => {
       searchBar.classList.toggle("active");
+      toggleSearchBtn.classList.toggle("active"); // rota el icono
       if (searchBar.classList.contains("active")) {
         document.getElementById("searchInput").focus();
       }
