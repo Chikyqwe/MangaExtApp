@@ -144,6 +144,7 @@ header {
   padding: 20px;
   color: #aaa;
 }
+/* Header */
 header {
   background: #121212;
   border-bottom: 1px solid #222;
@@ -153,7 +154,7 @@ header {
   z-index: 100;
 }
 
-/* Contenedor flex para logo + botón */
+/* Contenedor flex logo + botón */
 .header-container {
   display: flex;
   align-items: center;
@@ -171,15 +172,20 @@ header {
   width: auto;
 }
 
-/* Botón de búsqueda pequeño */
+/* Botón de búsqueda visible y destacado */
 .search-btn-container button {
-  background: #3498db;
+  background: #00cfff;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: white;
-  font-size: 18px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #121212;
+  font-size: 20px;
   cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.search-btn-container button:hover {
+  transform: scale(1.1);
 }
 
 /* Barra de búsqueda desplegable */
@@ -189,11 +195,10 @@ header {
   transition: max-height 0.3s ease, padding 0.3s ease;
   display: flex;
   gap: 8px;
-  padding: 0 15px; /* padding animado */
+  padding: 0 15px;
   background: #121212;
 }
 
-/* Barra visible */
 .search-bar.active {
   max-height: 60px;
   padding: 10px 15px;
@@ -221,4 +226,7 @@ header {
   padding: 0 12px;
   cursor: pointer;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
