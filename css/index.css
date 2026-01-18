@@ -238,7 +238,6 @@ header {
   padding: 10px;
 }
 
-/* Botón capítulos y siguiente */
 #btnChapters, #btnNext {
   background: #3498db;
   color: white;

@@ -166,16 +166,18 @@ const App = (() => {
   ======================= */
 
 function openViewer(url, nextChapter = null) {
-  // Ocultar todo lo que distraiga
-  document.getElementById("content").style.display = "none";
-  document.getElementById("searchBar").classList.remove("active");
-  document.querySelector(".header-container").style.display = "none";
-
+  const content = document.getElementById("content");
   const reader = document.getElementById("reader");
+
+  // Ocultar solo contenido y botón de búsqueda
+  content.style.display = "none";
+  document.getElementById("toggleSearchBtn").style.display = "none";
+  document.getElementById("searchBar").classList.remove("active");
+
   reader.style.display = "block";
   reader.innerHTML = `
     <div class="reader-header">
-      <button class="btn-back" id="btnChapters">Capítulos</button>
+      <button class="btn-back" id="btnChapters">📖 Capítulos</button>
       <h3 id="chapterTitle">Cargando capítulo...</h3>
     </div>
     <div id="reader-pages"></div>
@@ -188,18 +190,23 @@ function openViewer(url, nextChapter = null) {
     CascadeReader.init({
       ...data,
       container: "reader-pages",
-      onEnd: () => addNextButton(nextChapter)
+      onEnd: () => {
+        if (data.next) addNextButton(data.next); // next capítulo
+      }
     });
 
-    // Botón volver a capítulos
+    // Botón volver a capítulos del manga
     document.getElementById("btnChapters").onclick = () => {
-      closeReader();
-      App.back(); // vuelve a la biblioteca o lista de capítulos
+      // Mostrar contenido y botón búsqueda nuevamente
+      content.style.display = "grid";
+      document.getElementById("toggleSearchBtn").style.display = "block";
+      reader.style.display = "none";
+      reader.innerHTML = "";
     };
   });
 }
 
-// Agregar botón "Siguiente" al final del capítulo
+// Crear botón Siguiente capítulo al final del reader
 function addNextButton(nextChapterUrl) {
   if (!nextChapterUrl) return;
   const footer = document.getElementById("reader-footer");
@@ -208,6 +215,7 @@ function addNextButton(nextChapterUrl) {
     openViewer(nextChapterUrl);
   };
 }
+
 
   function closeReader() {
     currentView = "manga";
