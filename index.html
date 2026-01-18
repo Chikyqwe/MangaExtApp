@@ -25,7 +25,7 @@
 <body>
 <header>
   <div class="header-container">
-    <!-- Logo -->
+    <!-- Logo SVG -->
     <div class="logo-container">
       <svg viewBox="0 0 400 120" class="logo-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
         <text x="10" y="60" font-family="Alice, serif" font-size="36" font-weight="bold">
@@ -39,28 +39,20 @@
       </svg>
     </div>
 
-    <!-- Botón menú capítulos -->
+    <!-- Icono tipo < que indica menú desplegable -->
     <div class="menu-icon-container">
-      <button id="btnChaptersHeader" class="menu-icon"><i class="bi bi-chevron-left"></i></button>
-    </div>
-
-    <!-- Botón búsqueda -->
-    <div class="search-btn-container">
-      <button id="toggleSearchBtn" class="search-icon"><i class="bi bi-search"></i></button>
+      <button id="toggleSearchBtn" class="menu-icon">
+        <i class="bi bi-chevron-left"></i>
+      </button>
     </div>
   </div>
 
-  <!-- Menú capítulos -->
-  <div id="chapterMenu" class="chapter-menu"></div>
-
-  <!-- Barra de búsqueda -->
+  <!-- Barra de búsqueda desplegable -->
   <div class="search-bar" id="searchBar">
     <input type="search" id="searchInput" placeholder="Buscar manga..." autocomplete="off" />
     <button id="searchBtn"><i class="bi bi-search"></i></button>
   </div>
 </header>
-
-
 
 
   <!-- Biblioteca / Detalles -->
@@ -69,29 +61,17 @@
   <!-- Lector -->
   <div id="reader" style="display:none;"></div>
   <script>
-    const toggleMenuBtn = document.getElementById("toggleMenuBtn");
-    const chapterMenu = document.getElementById("chapterMenu");
     const toggleSearchBtn = document.getElementById("toggleSearchBtn");
     const searchBar = document.getElementById("searchBar");
 
-    // Menú capítulos
-    toggleMenuBtn.addEventListener("click", () => {
-      const isActive = chapterMenu.classList.toggle("active");
-      toggleMenuBtn.classList.toggle("active", isActive);
-
-      // cerrar barra de búsqueda si está abierta
-      if (isActive) searchBar.classList.remove("active");
-    });
-
-    // Barra de búsqueda
     toggleSearchBtn.addEventListener("click", () => {
       searchBar.classList.toggle("active");
+      toggleSearchBtn.classList.toggle("active"); // rota el icono
       if (searchBar.classList.contains("active")) {
         document.getElementById("searchInput").focus();
-        chapterMenu.classList.remove("active");
-        toggleMenuBtn.classList.remove("active");
       }
     });
+
   </script>
 </body>
 </html>

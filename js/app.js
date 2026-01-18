@@ -165,74 +165,19 @@ const App = (() => {
      LECTOR
   ======================= */
 
-const btnChaptersHeader = document.getElementById("btnChaptersHeader");
-const chapterMenu = document.getElementById("chapterMenu");
+  function openViewer(url) {
+    currentView = "reader";
 
-btnChaptersHeader.addEventListener("click", () => {
-  chapterMenu.classList.toggle("active");
-});
-
-// Función para abrir reader y guardar capítulos
-function openViewer(url, chapters = [], currentIndex = 0) {
-  const content = document.getElementById("content");
-  const reader = document.getElementById("reader");
-
-  // Ocultar contenido y botón búsqueda
-  content.style.display = "none";
-  document.getElementById("toggleSearchBtn").style.display = "none";
-  document.getElementById("searchBar").classList.remove("active");
-
-  reader.style.display = "block";
-  reader.innerHTML = `
-    <div class="reader-header">
-      <h3 id="chapterTitle">Cargando capítulo...</h3>
-    </div>
-    <div id="reader-pages"></div>
-    <div id="reader-footer" style="margin-top:15px; text-align:center;"></div>
-  `;
-
-  // Llenar menú capítulos
-  chapterMenu.innerHTML = "";
-  chapters.forEach((ch, i) => {
-    const btn = document.createElement("button");
-    btn.textContent = ch.title;
-    btn.onclick = () => openViewer(ch.url, chapters, i);
-    chapterMenu.appendChild(btn);
-  });
-
-  MangaView.getChapter(url).then(data => {
-    document.getElementById("chapterTitle").textContent = `${data.title} · Cap ${data.chapter}`;
-
-    CascadeReader.init({
-      ...data,
-      container: "reader-pages",
-      onEnd: () => {
-        // Si hay siguiente capítulo
-        const next = chapters[currentIndex + 1];
-        if (next) addNextButton(next.url, chapters, currentIndex + 1);
-      }
+    MangaView.getChapter(url).then(data => {
+      Reader.init({
+        chapterData: data,
+        container: "reader-pages",
+        onClose: () => {
+          currentView = "manga";
+        }
+      });
     });
-  });
-}
-
-// Botón Siguiente
-function addNextButton(nextUrl, chapters, nextIndex) {
-  const footer = document.getElementById("reader-footer");
-  footer.innerHTML = `<button class="btn-play" id="btnNext">▶ Siguiente</button>`;
-  document.getElementById("btnNext").onclick = () => {
-    openViewer(nextUrl, chapters, nextIndex);
-  };
-}
-
-// Al cerrar reader, restaurar botones
-function closeReader() {
-  document.getElementById("reader").style.display = "none";
-  document.getElementById("reader").innerHTML = "";
-  document.getElementById("toggleSearchBtn").style.display = "block";
-  document.getElementById("content").style.display = "grid";
-  chapterMenu.classList.remove("active");
-}
-
+  }
 
   function closeReader() {
     currentView = "manga";

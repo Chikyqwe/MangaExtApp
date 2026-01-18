@@ -6,6 +6,7 @@
     "core/manga.js",
     "css/index.css",
     "index.html",
-    "js/app.js"
+    "js/app.js",
+    "js/reader.js"
   ]
 }
