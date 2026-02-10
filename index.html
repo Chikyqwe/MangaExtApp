@@ -1,78 +1,80 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>MangaExt</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+    }
+    body { @apply bg-[#0a0a0a] text-gray-100 antialiased; }
+    .card-gradient { background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 100%); }
+    #searchBar.active { @apply max-h-20 py-3 opacity-100; }
+  </style>
 
-  <!-- Cordova -->
   <script src="cordova.js"></script>
-
-  <!-- CORE -->
   <script src="core/http.js"></script>
   <script src="core/zonatmo.js"></script>
   <script src="core/manga.js"></script>
-
-  <!-- APP -->
-  <script src="js/app.js"></script>
-  <script src="js/reader.js"></script>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/index.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
 </head>
 
-<body>
-<header>
-  <div class="header-container">
-    <!-- Logo SVG -->
-    <div class="logo-container">
-      <svg viewBox="0 0 400 120" class="logo-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-        <text x="10" y="60" font-family="Alice, serif" font-size="36" font-weight="bold">
-          <tspan class="main-text" fill="#eeeeeeff">Manga </tspan>
-          <tspan class="ext-text" fill="#00cfff">EXT</tspan>
-        </text>
-        <path d="M220,30 L230,60 L220,90" stroke="#3C873A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-        <text x="100" y="90" text-anchor="middle" font-family="sans-serif" font-size="14" class="subtext" fill="#f3f3f3ff">
-          私たちはマンガを愛しています
-        </text>
-      </svg>
+<body class="min-h-screen">
+
+  <header class="sticky top-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      
+      <div class="flex items-center gap-2 cursor-pointer" id="logoHome">
+        <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
+          <i class="bi bi-book-half text-white text-xl"></i>
+        </div>
+        <h1 class="text-xl font-bold tracking-tight">
+          Manga<span class="text-sky-400">EXT</span>
+        </h1>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="toggleSearchBtn" class="p-2 rounded-full hover:bg-white/10 transition-colors text-xl">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Icono tipo < que indica menú desplegable -->
-    <div class="menu-icon-container">
-      <button id="toggleSearchBtn" class="menu-icon">
-        <i class="bi bi-chevron-left"></i>
+    <div id="searchBar" class="max-h-0 overflow-hidden px-4 bg-[#121212] border-b border-white/5 transition-all duration-300 ease-in-out opacity-0">
+      <div class="flex gap-2 max-w-2xl mx-auto">
+        <input type="search" id="searchInput" 
+               class="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+               placeholder="Buscar series o autores..." autocomplete="off" />
+        <button id="searchBtn" class="bg-sky-600 hover:bg-sky-500 px-4 rounded-xl font-medium transition-colors">
+          <i class="bi bi-search mr-2"></i>Ir
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" class="max-w-6xl mx-auto p-4 transition-opacity duration-300">
+    </main>
+
+  <div id="reader" class="fixed inset-0 z-[60] bg-black overflow-y-auto hidden">
+    <div id="reader-controls" class="fixed top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center z-10">
+      <button onclick="App.closeReader()" class="bg-white/10 backdrop-blur-md hover:bg-white/20 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+        <i class="bi bi-x-lg"></i>
       </button>
-    </div>
+      <div id="reader-title" class="text-sm font-medium text-center truncate px-4"></div>
+      <div class="w-10"></div> </div>
+    <div id="reader-pages" class="flex flex-col items-center"></div>
   </div>
 
-  <!-- Barra de búsqueda desplegable -->
-  <div class="search-bar" id="searchBar">
-    <input type="search" id="searchInput" placeholder="Buscar manga..." autocomplete="off" />
-    <button id="searchBtn"><i class="bi bi-search"></i></button>
-  </div>
-</header>
-
-
-  <!-- Biblioteca / Detalles -->
-  <div id="content"></div>
-
-  <!-- Lector -->
-  <div id="reader" style="display:none;"></div>
-  <script>
-    const toggleSearchBtn = document.getElementById("toggleSearchBtn");
-    const searchBar = document.getElementById("searchBar");
-
-    toggleSearchBtn.addEventListener("click", () => {
-      searchBar.classList.toggle("active");
-      toggleSearchBtn.classList.toggle("active"); // rota el icono
-      if (searchBar.classList.contains("active")) {
-        document.getElementById("searchInput").focus();
-      }
-    });
-
-  </script>
+  <script src="js/app.js"></script>
 </body>
 </html>
